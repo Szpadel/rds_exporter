@@ -189,6 +189,7 @@ func buildCredentials(instance config.Instance) (*credentials.Credentials, error
 			if err != nil {
 				return nil, err
 			}
+			return stscreds.NewCredentials(stsSession, instance.AWSRoleArn), nil
 		}else {
 			stsSession, err := session.NewSession(&aws.Config{
 				Region:      aws.String(instance.Region),
@@ -197,9 +198,9 @@ func buildCredentials(instance config.Instance) (*credentials.Credentials, error
 			if err != nil {
 				return nil, err
 			}
+			return stscreds.NewCredentials(stsSession, instance.AWSRoleArn), nil
 		}
 
-		return stscreds.NewCredentials(stsSession, instance.AWSRoleArn), nil
 	}
 	if instance.AWSAccessKey != "" || instance.AWSSecretKey != "" {
 		return credentials.NewCredentials(&credentials.StaticProvider{
