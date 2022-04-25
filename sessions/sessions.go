@@ -101,10 +101,7 @@ func New(instances []config.Instance, client *http.Client, trace bool) (*Session
 		if err != nil {
 			return nil, err
 		}
-		session_key := instance.AWSRoleArn
-		if session_key == "" {
-			session_key = instance.AWSAccessKey
-		}
+		
 		sharedSessions[instance.Region+"/"+session_key] = s
 		res.sessions[s] = append(res.sessions[s], Instance{
 			Region:                 instance.Region,
