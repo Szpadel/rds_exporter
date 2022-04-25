@@ -52,8 +52,12 @@ func New(instances []config.Instance, client *http.Client, trace bool) (*Session
 
 	sharedSessions := make(map[string]*session.Session) // region/key => session
 	for _, instance := range instances {
+		session_key := instance.AWSRoleArn
+		if session_key == "" {
+			session_key = instance.AWSAccessKey
+		}
 		// re-use session for the same region and key (explicit or empty for implicit) pair
-		if s := sharedSessions[instance.Region+"/"+instance.AWSAccessKey]; s != nil {
+		if s := sharedSessions[instance.Region+"/"+session_key]; s != nil {
 			res.sessions[s] = append(res.sessions[s], Instance{
 				Region:                 instance.Region,
 				Instance:               instance.Instance,
@@ -97,7 +101,11 @@ func New(instances []config.Instance, client *http.Client, trace bool) (*Session
 		if err != nil {
 			return nil, err
 		}
-		sharedSessions[instance.Region+"/"+instance.AWSAccessKey] = s
+		session_key := instance.AWSRoleArn
+		if session_key == "" {
+			session_key = instance.AWSAccessKey
+		}
+		sharedSessions[instance.Region+"/"+session_key] = s
 		res.sessions[s] = append(res.sessions[s], Instance{
 			Region:                 instance.Region,
 			Instance:               instance.Instance,
@@ -122,7 +130,6 @@ func New(instances []config.Instance, client *http.Client, trace bool) (*Session
 
 			for _, dbInstance := range output.DBInstances {
 				for i, instance := range instances {
-					logger.Infof("dbi: %s, i: %s", *dbInstance.DBInstanceIdentifier, instance.Instance)
 					if *dbInstance.DBInstanceIdentifier == instance.Instance {
 						instances[i].ResourceID = *dbInstance.DbiResourceId
 						instances[i].EnhancedMonitoringInterval = time.Duration(*dbInstance.MonitoringInterval) * time.Second
@@ -182,7 +189,6 @@ func (s *Sessions) GetSession(region, instance string) (*session.Session, *Insta
 
 func buildCredentials(instance config.Instance) (*credentials.Credentials, error) {
 	if instance.AWSRoleArn != "" {
-		logger.Infof("Using arn for %s", instance.Instance)
 		if instance.AWSAccessKey != "" || instance.AWSSecretKey != "" {
 			stsSession, err := session.NewSession(&aws.Config{
 				Region:      aws.String(instance.Region),
