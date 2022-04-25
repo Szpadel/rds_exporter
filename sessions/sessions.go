@@ -122,7 +122,7 @@ func New(instances []config.Instance, client *http.Client, trace bool) (*Session
 
 			for _, dbInstance := range output.DBInstances {
 				for i, instance := range instances {
-					logger.Info("dbi: %s, i: %s", *dbInstance.DBInstanceIdentifier, instance.Instance)
+					logger.Infof("dbi: %s, i: %s", *dbInstance.DBInstanceIdentifier, instance.Instance)
 					if *dbInstance.DBInstanceIdentifier == instance.Instance {
 						instances[i].ResourceID = *dbInstance.DbiResourceId
 						instances[i].EnhancedMonitoringInterval = time.Duration(*dbInstance.MonitoringInterval) * time.Second
@@ -182,6 +182,7 @@ func (s *Sessions) GetSession(region, instance string) (*session.Session, *Insta
 
 func buildCredentials(instance config.Instance) (*credentials.Credentials, error) {
 	if instance.AWSRoleArn != "" {
+		logger.Infof("Using arn for %s", instance.Instance)
 		if instance.AWSAccessKey != "" || instance.AWSSecretKey != "" {
 			stsSession, err := session.NewSession(&aws.Config{
 				Region:      aws.String(instance.Region),
